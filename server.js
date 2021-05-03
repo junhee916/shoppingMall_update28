@@ -9,7 +9,8 @@ const userRouter = require('./router/user')
 const productRouter = require('./router/product')
 const orderRouter = require('./router/order')
 
-require('./config/database')
+const connectDB = require('./config/database')
+connectDB()
 
 // middleware
 app.use(bodyParser.json())
