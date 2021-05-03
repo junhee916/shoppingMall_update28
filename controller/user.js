@@ -32,49 +32,48 @@ exports.users_signup_user = async (req, res) => {
 
 };
 
-exports.users_login_user = (req, res) => {
+exports.users_login_user = async (req, res) => {
 
     const {email, password} = req.body
 
-    userModel
-        .findOne({email})
-        .then(user => {
-            if(!user){
-                return res.status(401).json({
-                    msg : "user email, please other email"
-                })
-            }
-            else{
-                bcrypt.compare(password, user.password, (err, isMatch) => {
-                    if(err || isMatch === 'false'){
-                        return res.status(402).json({
-                            msg : "not match password"
-                        })
-                    }
-                    else{
-                        const token = jwt.sign(
-                            {id : user._id, email : user.email},
-                            process.env.SECRET_KEY,
-                            {expiresIn: '1h'}
-                        )
+    try{
 
-                        res.json({
-                            msg : "successful login",
-                            userInfo : {
-                                id : user._id,
-                                name : user.name,
-                                email : user.email,
-                                password : user.password,
-                            },
-                            tokenInfo : token
-                        })
-                    }
-                })
-            }
-        })
-        .catch(err => {
-            res.status(500).json({
-                msg : err.message
+       const user = await userModel.findOne({email})
+        if(!user){
+            return res.status(400).json({
+                msg : 'user email, please other email'
             })
+        }
+        else{
+            await user.comparePassword(password, (err, isMatch) => {
+                if(err || !isMatch){
+                    return res.status(400).json({
+                        msg : "not match password"
+                    })
+                }
+                else{
+
+                    const payload = {
+                        id : user._id,
+                        email : user.email
+                    }
+
+                    const token = jwt.sign(
+                        payload,
+                        process.env.SECRET_KEY,
+                        {expiresIn: '1h'}
+                    )
+
+                    res.json({token})
+                }
+
+            })
+        }
+
+
+    }catch(err){
+        res.status(500).json({
+            msg : err.message
         })
+    }
 };
